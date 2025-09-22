@@ -231,3 +231,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+## Files
+
+*.ics
