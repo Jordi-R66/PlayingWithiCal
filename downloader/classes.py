@@ -39,14 +39,16 @@ class Date(datetime):
 		return JJ
 
 class Event:
+	NAME_LENGTH: int = 40
+
 	def __init__(self):
-		self.start: datetime = None
-		self.end: datetime = None
+		self.start: Date = None
+		self.end: Date = None
 
 		self.name: str = None
 		self.teachers: list[str] = None
 		self.groups: list[str] = None
-		self.location: str = None
+		self.locations: list[str] = None
 
 	def getDuration(self) -> timedelta:
 		return self.end - self.start
@@ -91,7 +93,7 @@ class Event:
 		newEvent.name = str(self.name)
 		newEvent.groups = list(self.groups)
 		newEvent.teachers = list(self.teachers)
-		newEvent.location = list(self.location)
+		newEvent.locations = list(self.locations)
 
 		return newEvent
 
@@ -113,7 +115,7 @@ class Event:
 			elif (key == "LOCATION"):
 				locations: list[str] = value.split("\\,")
 
-				self.location = list(locations)
+				self.locations = list(locations)
 			elif (key == "DESCRIPTION"):
 				self.groups, self.teachers = Event.readRawDescription(value)
 
