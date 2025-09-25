@@ -1,17 +1,43 @@
 from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 
+from unidecode import unidecode
+
 from ctypes import c_float, c_uint8, c_char
 from math import floor
 
 def ENT(x: float) -> int:
 	return int(floor(x))
 
-class Date(datetime):
+class Date:
 	UNIX_EPOCH: datetime = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-	def __new__(cls, dt_object: datetime):
-		super().__new__(cls, dt_object.year, dt_object.month, dt_object.day, dt_object.hour, dt_object.minute, tzinfo=dt_object.tzinfo)
+	def __init__(self, dt_object: datetime):
+		self._dt: datetime = datetime(dt_object.year, dt_object.month, dt_object.day, dt_object.hour, dt_object.minute, tzinfo=dt_object.tzinfo)
+
+	@property
+	def year(self):
+		return self.dt.year
+
+	@property
+	def month(self):
+		return self.dt.month
+
+	@property
+	def day(self):
+		return self.dt.day
+
+	@property
+	def hour(self):
+		return self.dt.hour
+
+	@property
+	def minute(self):
+		return self.dt.minute
+	
+	@property
+	def dt(self) -> datetime:
+		return self._dt
 
 	def dayFrac(self) -> float:
 		"""Outputs the fraction of the day as a float"""
@@ -35,10 +61,51 @@ class Date(datetime):
 		JJ: float = ENT(365.25 * YEAR) + ENT(30.6001 * (MONTH + 1)) + DAY + self.dayFrac() + B + 1720994.5
 
 		if (relative != None):
+			if isinstance(relative, datetime):
+				relative = Date(relative)
+
 			JJ -= relative.JulianDay(None)
 
 		return JJ
 
+	def __eq__(self, value: Date | datetime) -> bool:
+		if value is None:
+			return False
+
+		if isinstance(value, Date):
+			return self.dt == value.dt
+		elif isinstance(value, datetime):
+			return self.dt == value
+		else:
+			raise Exception("")
+
+	def __gt__(self, value: Date | datetime) -> bool:
+		if value is None:
+			return False
+
+		if isinstance(value, Date):
+			return self.dt > value.dt
+		elif isinstance(value, datetime):
+			return self.dt > value
+		else:
+			raise Exception("")
+
+	def __ge__(self, value: Date | datetime) -> bool:
+		return self.__gt__(value) or self.__eq__(value)
+
+	def __lt__(self, value: Date | datetime) -> bool:
+		if value is None:
+			return False
+
+		if isinstance(value, Date):
+			return self.dt < value.dt
+		elif isinstance(value, datetime):
+			return self.dt < value
+		else:
+			raise Exception("")
+
+	def __le__(self, value: Date | datetime) -> bool:
+		return self.__lt__(value) or self.__eq__(value)
 class Event:
 	NAME_LENGTH: int = 40
 
@@ -52,7 +119,7 @@ class Event:
 		self.locations: list[str] = None
 
 	def getDuration(self) -> timedelta:
-		return self.end - self.start
+		return self.end.dt - self.start.dt
 
 	def readRawDescription(description: str) -> tuple[list[str]]:
 		canParse: bool = False
@@ -105,7 +172,7 @@ class Event:
 
 			if (key.startswith("DT")):
 				stamp: str = value
-				time_obj: datetime = Event.parseTimeStamp(stamp)
+				time_obj: Date = Event.parseTimeStamp(stamp)
 
 				if ("START" in key):
 					self.start = time_obj
@@ -120,7 +187,7 @@ class Event:
 			elif (key == "DESCRIPTION"):
 				self.groups, self.teachers = Event.readRawDescription(value)
 
-	def parseTimeStamp(stamp: str) -> datetime:
+	def parseTimeStamp(stamp: str) -> Date:
 		"""
 		[YYYYMMDD]T[HHmmSS][Z]
 
@@ -145,18 +212,19 @@ class Event:
 		minute: int = int(time_string[2:4])
 		second: int = int(time_string[4:6])
 
-		output: datetime = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
+		output: Date = Date(datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc))
 
 		return output
 
 	def __str__(self):
-		return f"\t{self.name}\n{"-"*50}\nFROM\t{self.start.astimezone()}\nTO\t{self.end.astimezone()}\n\t({self.getDuration()})\nIN\t{"\n\t".join(self.locations)}\nFOR\t{"\n\t".join(self.groups)}\nWITH\t{"\n\t".join(self.teachers)}"
+		return f"\t{self.name}\n{"-"*50}\nFROM\t{self.start.dt.astimezone()}\nTO\t{self.end.dt.astimezone()}\n\t({self.getDuration()})\nIN\t{"\n\t".join(self.locations)}\nFOR\t{"\n\t".join(self.groups)}\nWITH\t{"\n\t".join(self.teachers)}"
 
 	def to_bytes(self) -> bytes:
 		output: bytes = b""
+		c_string_t = c_char * (self.NAME_LENGTH + 1)
 
-		name_arr = c_char * (self.NAME_LENGTH + 1)
-		encoded: bytes = self.name.encode("ascii")[:self.NAME_LENGTH]
+		name_arr = c_string_t()
+		encoded: bytes = unidecode(self.name).encode("ascii")[:self.NAME_LENGTH]
 		name_arr[:len(encoded)] = encoded
 
 		output += bytes(name_arr)
@@ -173,24 +241,24 @@ class Event:
 
 		output += bytes(q_groups)
 		for group in self.groups:
-			group_arr = c_char * (self.NAME_LENGTH + 1)
-			encoded_group: bytes = group.encode("ascii")[:self.NAME_LENGTH]
+			group_arr = c_string_t()
+			encoded_group: bytes = unidecode(group).encode("ascii")[:self.NAME_LENGTH]
 			group_arr[:len(encoded_group)] = encoded_group
 
 			output += bytes(group_arr)
 
 		output += bytes(q_teachers)
 		for teacher in self.teachers:
-			teacher_arr = c_char * (self.NAME_LENGTH + 1)
-			encoded_teacher: bytes = teacher.encode("ascii")[:self.NAME_LENGTH]
+			teacher_arr = c_string_t()
+			encoded_teacher: bytes = unidecode(teacher).encode("ascii")[:self.NAME_LENGTH]
 			teacher_arr[:len(encoded_teacher)] = encoded_teacher
 
 			output += bytes(teacher_arr)
 
 		output += bytes(q_locations)
 		for location in self.locations:
-			location_arr = c_char * (self.NAME_LENGTH + 1)
-			encoded_location: bytes = location.encode("ascii")[:self.NAME_LENGTH]
+			location_arr = c_string_t()
+			encoded_location: bytes = unidecode(location).encode("ascii")[:self.NAME_LENGTH]
 			location_arr[:len(encoded_location)] = encoded_location
 
 			output += bytes(location_arr)
