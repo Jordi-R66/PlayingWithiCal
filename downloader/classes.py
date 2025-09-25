@@ -10,8 +10,8 @@ def ENT(x: float) -> int:
 class Date(datetime):
 	UNIX_EPOCH: datetime = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-	def __init__(self, dt_object: datetime):
-		super.__init__(dt_object.year, dt_object.month, dt_object.day, dt_object.hour, dt_object.minute, tzinfo=dt_object.tzinfo)
+	def __new__(cls, dt_object: datetime):
+		super().__new__(cls, dt_object.year, dt_object.month, dt_object.day, dt_object.hour, dt_object.minute, tzinfo=dt_object.tzinfo)
 
 	def dayFrac(self) -> float:
 		"""Outputs the fraction of the day as a float"""
