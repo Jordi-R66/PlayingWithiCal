@@ -63,7 +63,7 @@ def getEventsFromStream(ics_stream: str, filterDate: Date | None=None) -> list[E
 			elif (l[0] == " "):
 				lines[len(lines) - 1] += l[1::]
 
-	events.sort(key=lambda x: x.start, reverse=False)
+	events.sort(key=lambda x: x.start.dt, reverse=False)
 
 	return events
 
