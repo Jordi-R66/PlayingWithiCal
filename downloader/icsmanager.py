@@ -29,7 +29,7 @@ def loadRemoteStream(ics_url: str) -> str:
 
 	return stream
 
-def getEventsFromStream(ics_stream: str, filterDate: Date | None=None) -> list[Event]:
+def getEventsFromStream(ics_stream: str, getAfterDate: Date | None=None) -> list[Event]:
 	ics_lines: list[str] = ics_stream.split("\n")
 
 	lines: list[str] = []
@@ -49,7 +49,7 @@ def getEventsFromStream(ics_stream: str, filterDate: Date | None=None) -> list[E
 				readingEvent = False
 
 				eventObj.setToLineBlock(lines)
-				if ((filterDate != None) and (eventObj.end >= filterDate)) or (filterDate == None):
+				if ((getAfterDate != None) and (eventObj.end >= getAfterDate)) or (getAfterDate == None):
 					events.append(eventObj.copy())
 
 				eventObj = None
