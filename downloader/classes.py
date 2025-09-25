@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 
+from ctypes import c_float, c_uint8, c_char
 from math import floor
 
 def ENT(x: float) -> int:
@@ -149,4 +150,49 @@ class Event:
 		return output
 
 	def __str__(self):
-		return f"\t{self.name}\n{"-"*50}\nFROM\t{self.start.astimezone()}\nTO\t{self.end.astimezone()}\n\t({self.getDuration()})\nIN\t{"\n\t".join(self.location)}\nFOR\t{"\n\t".join(self.groups)}\nWITH\t{"\n\t".join(self.teachers)}"
+		return f"\t{self.name}\n{"-"*50}\nFROM\t{self.start.astimezone()}\nTO\t{self.end.astimezone()}\n\t({self.getDuration()})\nIN\t{"\n\t".join(self.locations)}\nFOR\t{"\n\t".join(self.groups)}\nWITH\t{"\n\t".join(self.teachers)}"
+
+	def to_bytes(self) -> bytes:
+		output: bytes = b""
+
+		name_arr = c_char * (self.NAME_LENGTH + 1)
+		encoded: bytes = self.name.encode("ascii")[:self.NAME_LENGTH]
+		name_arr[:len(encoded)] = encoded
+
+		output += bytes(name_arr)
+
+		JJstart: c_float = c_float(self.start.JulianDay(Date.UNIX_EPOCH))
+		JJend: c_float = c_float(self.end.JulianDay(Date.UNIX_EPOCH))
+
+		output += bytes(JJstart)
+		output += bytes(JJend)
+
+		q_groups: c_uint8 = c_uint8(len(self.groups))
+		q_teachers: c_uint8 = c_uint8(len(self.teachers))
+		q_locations: c_uint8 = c_uint8(len(self.locations))
+
+		output += bytes(q_groups)
+		for group in self.groups:
+			group_arr = c_char * (self.NAME_LENGTH + 1)
+			encoded_group: bytes = group.encode("ascii")[:self.NAME_LENGTH]
+			group_arr[:len(encoded_group)] = encoded_group
+
+			output += bytes(group_arr)
+
+		output += bytes(q_teachers)
+		for teacher in self.teachers:
+			teacher_arr = c_char * (self.NAME_LENGTH + 1)
+			encoded_teacher: bytes = teacher.encode("ascii")[:self.NAME_LENGTH]
+			teacher_arr[:len(encoded_teacher)] = encoded_teacher
+
+			output += bytes(teacher_arr)
+
+		output += bytes(q_locations)
+		for location in self.locations:
+			location_arr = c_char * (self.NAME_LENGTH + 1)
+			encoded_location: bytes = location.encode("ascii")[:self.NAME_LENGTH]
+			location_arr[:len(encoded_location)] = encoded_location
+
+			output += bytes(location_arr)
+
+		return output
