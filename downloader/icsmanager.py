@@ -29,7 +29,7 @@ def loadRemoteStream(ics_url: str) -> str:
 
 	return stream
 
-def getEventsFromStream(ics_stream: str, filterDate: datetime | None=None) -> list[Event]:
+def getEventsFromStream(ics_stream: str, filterDate: Date | None=None) -> list[Event]:
 	ics_lines: list[str] = ics_stream.split("\n")
 
 	lines: list[str] = []
@@ -67,7 +67,7 @@ def getEventsFromStream(ics_stream: str, filterDate: datetime | None=None) -> li
 
 	return events
 
-def filterBetween(events: list[Event], from_time: datetime, to_time: datetime) -> list[Event]:
+def filterBetween(events: list[Event], from_time: Date, to_time: Date) -> list[Event]:
 	output: list[Event] = []
 
 	for event in events:
