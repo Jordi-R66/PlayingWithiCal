@@ -1,6 +1,43 @@
 from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 
+from math import floor
+
+def ENT(x: float) -> int:
+	return int(floor(x))
+
+class Date(datetime):
+	UNIX_EPOCH: datetime = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+	def __init__(self, dt_object: datetime):
+		super.__init__(dt_object.year, dt_object.month, dt_object.day, dt_object.hour, dt_object.minute, tzinfo=dt_object.tzinfo)
+
+	def dayFrac(self) -> float:
+		"""Outputs the fraction of the day as a float"""
+		H, M = self.hour, self.minute
+
+		if (H >= 24 or M >= 60):
+			return float('nan')
+
+		return (H * 60 + M) / 1440.0
+
+	def JulianDay(self, relative: datetime=None) -> float:
+		YEAR, MONTH, DAY = self.year, self.month, self.day
+
+		if (MONTH in (1, 2)):
+			YEAR -= 1
+			MONTH += 12
+
+		S: int = ENT(YEAR / 100)
+		B: int = 2 - S + ENT(S / 4)
+
+		JJ: float = ENT(365.25 * YEAR) + ENT(30.6001 * (MONTH + 1)) + DAY + self.dayFrac() + B + 1720994.5
+
+		if (relative != None):
+			JJ -= relative.JulianDay(None)
+
+		return JJ
+
 class Event:
 	def __init__(self):
 		self.start: datetime = None
